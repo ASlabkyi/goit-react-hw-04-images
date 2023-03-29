@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader } from 'components/Loader/Loader';
 
 import { Searchbar } from './Searchbar/Searchbar';
@@ -10,78 +10,71 @@ import { Modal } from './Modal/Modal';
 
 import { Container, globalStyles, AppWrapper } from './App.styled';
 
-export class App extends Component {
-  state = {
-    hits: [],
-    isLoading: false,
-    search: '',
-    page: 1,
-    modalImage: '',
-  };
+export const App = () => {
+  const [hits, setHits] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [imageModal, setImageModal] = useState('');
 
-  async componentDidUpdate(_, prevState) {
-    if (prevState.page !== this.state.page) {
-      this.setState({ isLoading: true });
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!search) {
+        return;
+      }
+      setIsLoading(true);
       try {
-        const data = await getData(this.state.search, this.state.page);
-        this.setState(prevState => ({
-          hits: prevState.hits.concat(data.hits),
-        }));
+        const data = await getData(search, page);
+        setHits(prev => [...prev, ...data.hits]);
       } catch (error) {
         alert(error.message);
       } finally {
-        this.setState({ isLoading: false });
+        setIsLoading(false);
       }
-    }
-  }
+    };
+    fetchData();
+  }, [page]);
 
-  handleChangeSearch = async search => {
-    this.setState({ search });
-    this.setState({ isLoading: true });
+  const handleChangeSearch = async search => {
+    setSearch(search);
+    setIsLoading(true);
     try {
       const data = await getData(search, 1);
-      this.setState({ hits: data.hits });
+      setHits(data.hits);
     } catch (error) {
       alert(error.message);
     } finally {
-      this.setState({ isLoading: false });
+      setIsLoading(false);
     }
   };
 
-  handleChangePage = () => {
-    this.setState(prev => ({ page: prev.page + 1 }));
+  const handleChangePage = () => {
+    setPage(prev => prev + 1);
   };
 
-  openModal = url => {
-    this.setState({ imageModal: url });
+  const openModal = url => {
+    setImageModal(url);
   };
 
-  closeModal = () => {
-    this.setState({ imageModal: '' });
+  const closeModal = () => {
+    setImageModal('');
   };
 
-  render() {
-    const { hits, isLoading } = this.state;
+  return (
+    <Container>
+      <Global styles={globalStyles} />
+      <AppWrapper>
+        <Searchbar onSubmit={handleChangeSearch}></Searchbar>
+        <ImageGallery hits={hits} openModal={openModal} />
 
-    return (
-      <Container>
-        <Global styles={globalStyles} />
-        <AppWrapper>
-          <Searchbar onSubmit={this.handleChangeSearch}></Searchbar>
-          <ImageGallery hits={hits} openModal={this.openModal} />
-
-          {isLoading && <Loader />}
-          {hits.length > 0 && (
-            <LoadMoreBtn title="Load More" onClick={this.handleChangePage} />
-          )}
-          {this.state.imageModal && (
-            <Modal
-              image={this.state.imageModal}
-              closeModal={this.closeModal}
-            ></Modal>
-          )}
-        </AppWrapper>
-      </Container>
-    );
-  }
-}
+        {isLoading && <Loader />}
+        {hits.length > 0 && (
+          <LoadMoreBtn title="Load More" onClick={handleChangePage} />
+        )}
+        {imageModal && (
+          <Modal image={imageModal} closeModal={closeModal}></Modal>
+        )}
+      </AppWrapper>
+    </Container>
+  );
+};
