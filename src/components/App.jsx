@@ -18,10 +18,9 @@ export const App = () => {
   const [imageModal, setImageModal] = useState('');
 
   useEffect(() => {
+    if (!search) return;
+
     const fetchData = async () => {
-      if (!search) {
-        return;
-      }
       setIsLoading(true);
       try {
         const data = await getData(search, page);
@@ -33,19 +32,12 @@ export const App = () => {
       }
     };
     fetchData();
-  }, [page]);
+  }, [page, search]);
 
-  const handleChangeSearch = async search => {
+  const handleChangeSearch = search => {
     setSearch(search);
-    setIsLoading(true);
-    try {
-      const data = await getData(search, 1);
-      setHits(data.hits);
-    } catch (error) {
-      alert(error.message);
-    } finally {
-      setIsLoading(false);
-    }
+    setHits([]);
+    setPage(1);
   };
 
   const handleChangePage = () => {
